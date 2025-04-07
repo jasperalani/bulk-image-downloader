@@ -52,27 +52,27 @@ If using linux download the [latest release](https://github.com/jasperalani/bulk
 
 Download images to default folder:
 ```bash
-python image_downloader.py https://example.com
+bulk_image_downloader https://example.com
 ```
 
 Download to a specific folder:
 ```bash
-python image_downloader.py https://example.com -f ./my_images
+bulk_image_downloader https://example.com -f ./my_images
 ```
 
 Force redownload of existing images:
 ```bash
-python image_downloader.py https://example.com -r
+bulk_image_downloader https://example.com -r
 ```
 
 Use custom headers:
 ```bash
-python image_downloader.py https://example.com -d '{"User-Agent": "Custom Agent", "Referer": "https://example.com"}'
+bulk_image_downloader https://example.com -d '{"User-Agent": "Custom Agent", "Referer": "https://example.com"}'
 ```
 
 Set custom timeout:
 ```bash
-python image_downloader.py https://example.com -t 30
+bulk_image_downloader https://example.com -t 30
 ```
 
 ## How It Works
