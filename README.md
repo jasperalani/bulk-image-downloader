@@ -1,44 +1,57 @@
-# Bulk Image Downloader
+# Image Downloader
 
-A command line utility that downloads all images from a webpage.
+A simple Python script to download all images from a given webpage.  
+Works on **Linux**, **macOS**, and **Windows Subsystem for Linux (WSL)**.
 
-## Features
+## 😎 Features
 
-- Extract images from HTML `<img>` tags and CSS `url()` styles
+- Extract images from HTML `<img>` tags (including srcset) and CSS `url()` styles
 - Support for custom HTTP headers
 - Progress tracking with completion percentage
 - Skip existing images (optional re-download with flag)
 - Custom download folder location
 - Handles relative and absolute URLs
+- Choose a specific image from a `srcset` or fallback to first/last option
+<br/><br/>
 
-## Installation
+## 🚀 Quick Start
 
-### Requirements
+### 1. Clone the repository
 
-- Python 3.6+
-- Linux operating system
+```bash
+git clone https://github.com/jasperalani/image-downloader.git
+cd image-downloader
+```
 
-### Dependencies
+### 2. Install dependencies
 
-Install dependencies using pip:
+First, make sure Python 3 is installed.<br/>
 
+- If using Windows WSL as your linux environment then you might have to create a local python environment:
+```bash
+python3 -m venv ~/python_custom_env
+~/python_custom_env/bin/pip3 install requests beautifulsoup4 tqdm
+```
+- If using other Linux/Mac:
 ```bash
 pip install requests beautifulsoup4 tqdm
 ```
 
-## Usage
+### 3. Run the script
 
-If using linux download the [latest release](https://github.com/jasperalani/bulk-image-downloader/releases) and use that otherwise clone this project with `git clone github.com/jasperalani/bulk-image-downloader`
-- Linux/MacOS:
-    ```bash
-    bulk_image_downloader https://example.com
-    ```
-- Windows:
-  ```bash
-    python bulk_image_downloader.py https://example.com
-    ```
+- Windows WSL:
+```bash
+~/python_custom_env/bin/python3 image-downloader.py https://example.com
+```
+- Linux/Mac:
+```bash
+python3 image-downloader.py https://example.com
+```
 
-### Command Line Arguments
+Replace `https://example.com` with the URL of the page you want to download images from.
+<br/><br/>
+
+## 💿 Command Line Arguments
 
 | Argument | Description |
 |----------|-------------|
@@ -47,43 +60,40 @@ If using linux download the [latest release](https://github.com/jasperalani/bulk
 | `-r, --redownload` | Redownload images that pre-exist in download folder |
 | `-d, --headers` | Custom headers in JSON format |
 | `-t, --timeout` | Request timeout in seconds (default: 10) |
+| `-c, --srcset` | Index of image to use from `srcset` (0-based index) |
+| `-cf, --srcset-use-first` | Fallback to first image in `srcset` if index is out of range (default: `true`). Set to `false` to fallback to the last image instead. |
 
 ### Examples
 
 Download images to default folder:
 ```bash
-bulk_image_downloader https://example.com
+image-downloader https://example.com
 ```
 
 Download to a specific folder:
 ```bash
-bulk_image_downloader https://example.com -f ./my_images
+image-downloader https://example.com -f ./my_images
 ```
 
 Force redownload of existing images:
 ```bash
-bulk_image_downloader https://example.com -r
+image-downloader https://example.com -r
 ```
 
 Use custom headers:
 ```bash
-bulk_image_downloader https://example.com -d '{"User-Agent": "Custom Agent", "Referer": "https://example.com"}'
+image-downloader https://example.com -d '{"User-Agent": "Custom Agent", "Referer": "https://example.com"}'
 ```
 
 Set custom timeout:
 ```bash
-bulk_image_downloader https://example.com -t 30
+image-downloader https://example.com -t 30
 ```
 
-## How It Works
+Use 4th image from `srcset`, and fallback to **last** image if out of range:
+```bash
+image-downloader https://example.com -c 4 -cf false
+```
+<br/>
 
-1. Fetches the HTML content of the provided website
-2. Parses the HTML to extract image URLs from various sources:
-   - Standard `<img>` tags
-   - Image URLs in srcset attributes
-   - Data attributes like data-src, data-lazy, data-original
-   - Background images in CSS styles
-3. Downloads each image with progress tracking
-4. Provides a summary of downloaded, skipped, and failed images
-
-## [License](https://github.com/jasperalani/bulk-image-downloader/blob/main/LICENSE)
+## [📄 View License](https://github.com/jasperalani/image-downloader/blob/main/LICENSE)

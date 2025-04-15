@@ -18,6 +18,9 @@ def parse_arguments():
     parser.add_argument("-r", "--redownload", help="Redownload images that pre-exist in download folder", action="store_true")
     parser.add_argument("-d", "--headers", help="Custom headers in JSON format", default=None)
     parser.add_argument("-t", "--timeout", help="Request timeout", default=10)
+    parser.add_argument("-c", "--srcset", type=int, help="Index of image to use from srcset (0-based index)")
+    parser.add_argument("-cf", "--srcset-use-first", type=str, default="true",
+                        help="Fallback to first image in srcset if index is out of range (default: true). If false, will use the last image instead.")
     return parser.parse_args()
 
 def process_headers(args):
@@ -52,18 +55,27 @@ def fetch_webpage(url, headers, req_timeout):
         logging.error(f"Failed to retrieve the website: {e}")
         return None
 
-def extract_image_urls(soup):
+def extract_image_urls(soup, srcset_index=None, srcset_use_first=True):
     image_urls = set()
     url_pattern = re.compile(r'url\((.*?)\)', re.IGNORECASE)
-    
+
     for img in soup.find_all('img'):
         url = img.get('src')
         if not url:
             srcset = img.get('srcset')
             if srcset:
-                srcset_items = [item.strip() for item in srcset.split(',')]
+                srcset_items = [item.strip() for item in srcset.split(',') if item.strip()]
                 if srcset_items:
-                    url = srcset_items[0].split()[0]
+                    if srcset_index is not None:
+                        try:
+                            url = srcset_items[srcset_index].split()[0]
+                        except IndexError:
+                            if srcset_use_first:
+                                url = srcset_items[0].split()[0]
+                            else:
+                                url = srcset_items[-1].split()[0]
+                    else:
+                        url = srcset_items[0].split()[0]
         if not url:
             for attr in ['data-src', 'data-lazy', 'data-original']:
                 url = img.get(attr)
@@ -71,7 +83,7 @@ def extract_image_urls(soup):
                     break
         if url:
             image_urls.add(url)
-    
+
     for tag in soup.find_all(style=True):
         style_content = tag['style']
         urls = url_pattern.findall(style_content)
@@ -79,7 +91,7 @@ def extract_image_urls(soup):
             clean_url = url.strip(' "\'')
             if clean_url:
                 image_urls.add(clean_url)
-                
+
     return list(image_urls)
 
 def get_save_location(image_url, base_url, sub_folder_path):
@@ -107,11 +119,11 @@ def process_images(image_elements, base_url, sub_folder_path, headers, req_timeo
     downloaded_count = 0
     skipped_count = 0
     failed_count = 0
-    
+
     for i, image_url in enumerate(tqdm(image_elements, desc="Downloading images", unit="image"), start=1):
         percent_complete = round((i - 1) / total * 100)
         absolute_url, save_location = get_save_location(image_url, base_url, sub_folder_path)
-        
+
         if os.path.exists(save_location) and not download_preexisting:
             logging.info(f"{percent_complete}% complete, image already downloaded: {save_location}")
             skipped_count += 1
@@ -122,7 +134,7 @@ def process_images(image_elements, base_url, sub_folder_path, headers, req_timeo
                 downloaded_count += 1
             else:
                 failed_count += 1
-    
+
     return downloaded_count, skipped_count, failed_count
 
 def main():
@@ -131,32 +143,34 @@ def main():
     sub_folder_path = args.folder
     download_preexisting = args.redownload
     req_timeout = int(args.timeout)
-    
+    srcset_index = args.srcset
+    srcset_use_first = args.srcset_use_first.lower() == "true"
+
     headers, custom_headers_print = process_headers(args)
-    
+
     if not scrape_url.startswith(('http://', 'https://')):
-        scrape_url = 'https://' + scrape_url 
-    
+        scrape_url = 'https://' + scrape_url
+
     manage_application_folders(sub_folder_path)
-    
+
     logging.info(f"Scraping {scrape_url} for images{custom_headers_print}.")
     html = fetch_webpage(scrape_url, headers, req_timeout)
     if html is None:
         return
-    
+
     soup = BeautifulSoup(html, 'html.parser')
-    image_elements = extract_image_urls(soup)
+    image_elements = extract_image_urls(soup, srcset_index, srcset_use_first)
     found_length = len(image_elements)
     if found_length == 0:
         logging.info("No images found.")
         return
-    
+
     logging.info(f"Found {found_length} images.")
-    
+
     downloaded_count, skipped_count, failed_count = process_images(
         image_elements, scrape_url, sub_folder_path, headers, req_timeout, download_preexisting
     )
-    
+
     logging.info("Finished!")
     logging.info(f"Summary: {downloaded_count} downloaded, {skipped_count} skipped, {failed_count} failed.")
 
